@@ -280,6 +280,9 @@ class FlightSearchService:
         chamada, que traz os canais de venda com link de compra.
         """
         params = self.build_params(criteria)
+        # tokens de continuacao ja carregam o contexto da busca profunda
+        # original; reenviar deep_search so adiciona latencia
+        params.pop("deep_search", None)
         token = booking_token
         if token is None and departure_token:
             payload = self._client.search(
