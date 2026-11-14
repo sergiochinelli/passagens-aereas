@@ -280,25 +280,43 @@ def test_fcm_client_payload_and_headers():
     captured = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
+        captured["url"] = str(request.url)
         captured["headers"] = dict(request.headers)
         captured["json"] = json.loads(request.content)
         return httpx.Response(200, json={"message_id": "ok-1"})
 
     http = httpx.Client(transport=httpx.MockTransport(handler))
-    client = FCMClient(http_client=http)
+    client = FCMClient(
+        http_client=http,
+        token_provider=lambda: "fake-oauth-token",
+        project_id="test-project",
+    )
 
     resp = client.send_push("tok-abc", "Titulo", "Corpo", {"k": "v"})
     assert resp == {"message_id": "ok-1"}
-    assert captured["headers"]["authorization"] == "key=test-fcm-key"
-    assert captured["json"]["to"] == "tok-abc"
-    assert captured["json"]["notification"]["title"] == "Titulo"
-    assert captured["json"]["data"] == {"k": "v"}
+    assert captured["headers"]["authorization"] == "Bearer fake-oauth-token"
+    assert "/v1/projects/test-project/messages:send" in captured["url"]
+    msg = captured["json"]["message"]
+    assert msg["token"] == "tok-abc"
+    assert msg["notification"]["title"] == "Titulo"
+    assert msg["data"] == {"k": "v"}
 
 
-def test_fcm_client_missing_key(monkeypatch):
-    monkeypatch.setattr("app.core.config.settings.FCM_KEY", "")
+def test_fcm_client_reads_credentials_from_env_json():
     client = FCMClient()
-    with pytest.raises(FCMError, match="FCM_KEY"):
+    info = client._credentials_info()
+    assert info["project_id"] == "test-project"
+    assert client._resolve_project_id() == "test-project"
+
+
+def test_fcm_client_missing_credentials(monkeypatch):
+    monkeypatch.setattr("app.core.config.settings.FIREBASE_CREDENTIALS_JSON", "")
+    monkeypatch.setattr(
+        "app.core.config.settings.FIREBASE_SERVICE_ACCOUNT_FILE",
+        "nao-existe-este-arquivo.json",
+    )
+    client = FCMClient()
+    with pytest.raises(FCMError, match="Credenciais Firebase"):
         client.send_push("tok", "t", "b", {})
 
 

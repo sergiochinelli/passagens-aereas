@@ -5,6 +5,8 @@ psycopg2-binary
 pydantic>=2.0
 pydantic-settings>=2.0
 httpx
+requests
+google-auth
 pytest
 APScheduler>=3.10
 tzdata

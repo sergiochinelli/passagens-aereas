@@ -1,5 +1,7 @@
+import json
 import logging
 from dataclasses import dataclass, field
+from pathlib import Path
 
 import httpx
 from sqlalchemy import select
@@ -12,6 +14,8 @@ from app.models.monitored_route import MonitoredRoute
 from app.models.search_result import SearchResult
 
 logger = logging.getLogger(__name__)
+
+FCM_SCOPE = "https://www.googleapis.com/auth/firebase.messaging"
 
 
 class FCMError(Exception):
@@ -29,44 +33,120 @@ class NotificationReport:
 
 
 class FCMClient:
-    """Cliente minimo para FCM (HTTP legacy API).
+    """Cliente FCM HTTP v1 com autenticacao OAuth2 (conta de servico).
 
-    A chave do servidor vem exclusivamente de settings.FCM_KEY (.env).
-    O transporte HTTP e injetavel para testes sem rede.
+    Credenciais resolvidas nesta ordem:
+    1. settings.FIREBASE_CREDENTIALS_JSON (JSON compacto em env — producao)
+    2. settings.FIREBASE_SERVICE_ACCOUNT_FILE (arquivo local — desenvolvimento)
+
+    token_provider e project_id sao injetaveis para testes sem rede/OAuth.
     """
 
-    def __init__(self, http_client: httpx.Client | None = None):
+    def __init__(
+        self,
+        http_client: httpx.Client | None = None,
+        token_provider=None,
+        project_id: str | None = None,
+    ):
         self._owns_client = http_client is None
         self._http = http_client or httpx.Client(
             timeout=settings.FCM_TIMEOUT_SECONDS
         )
+        self._token_provider = token_provider
+        self._project_id = project_id
+        self._service_account_info: dict | None = None
+        self._google_credentials = None
 
     def close(self) -> None:
         if self._owns_client:
             self._http.close()
 
+    # --------------------- credenciais ----------------------
+
+    def _credentials_info(self) -> dict:
+        if self._service_account_info is not None:
+            return self._service_account_info
+        raw = settings.FIREBASE_CREDENTIALS_JSON
+        if raw:
+            try:
+                self._service_account_info = json.loads(raw)
+            except json.JSONDecodeError as exc:
+                raise FCMError("FIREBASE_CREDENTIALS_JSON invalido") from exc
+            return self._service_account_info
+        path = Path(settings.FIREBASE_SERVICE_ACCOUNT_FILE)
+        if not path.is_absolute():
+            path = Path.cwd() / path
+        if not path.exists():
+            raise FCMError(
+                "Credenciais Firebase nao configuradas "
+                "(FIREBASE_CREDENTIALS_JSON ou arquivo de conta de servico)"
+            )
+        self._service_account_info = json.loads(path.read_text("utf-8"))
+        return self._service_account_info
+
+    def _resolve_project_id(self) -> str:
+        if self._project_id:
+            return self._project_id
+        if settings.FIREBASE_PROJECT_ID:
+            return settings.FIREBASE_PROJECT_ID
+        return self._credentials_info()["project_id"]
+
+    def _access_token(self) -> str:
+        if self._token_provider is not None:
+            return self._token_provider()
+        info = self._credentials_info()
+        if self._google_credentials is None:
+            try:
+                from google.auth.transport.requests import (
+                    Request as GoogleAuthRequest,
+                )
+                from google.oauth2 import service_account
+            except ImportError as exc:
+                raise FCMError(
+                    "Pacote google-auth ausente — instale requirements.txt"
+                ) from exc
+            self._google_credentials = (
+                service_account.Credentials.from_service_account_info(
+                    info, scopes=[FCM_SCOPE]
+                )
+            )
+            self._google_auth_request = GoogleAuthRequest()
+        if not self._google_credentials.valid:
+            try:
+                self._google_credentials.refresh(self._google_auth_request)
+            except Exception as exc:
+                raise FCMError(f"Falha ao obter access_token OAuth2: {exc}") from exc
+        return self._google_credentials.token
+
+    # ------------------------ envio -------------------------
+
     def send_push(self, token: str, title: str, body: str, data: dict) -> dict:
-        if not settings.FCM_KEY:
-            raise FCMError("FCM_KEY nao configurada no .env")
+        endpoint = settings.FCM_V1_ENDPOINT_TEMPLATE.format(
+            project_id=self._resolve_project_id()
+        )
         payload = {
-            "to": token,
-            "priority": "high",
-            "notification": {"title": title, "body": body},
-            "data": {k: str(v) for k, v in data.items() if v is not None},
+            "message": {
+                "token": token,
+                "notification": {"title": title, "body": body},
+                "data": {k: str(v) for k, v in data.items() if v is not None},
+            }
         }
         try:
             response = self._http.post(
-                settings.FCM_ENDPOINT,
+                endpoint,
                 json=payload,
                 headers={
-                    "Authorization": f"key={settings.FCM_KEY}",
+                    "Authorization": f"Bearer {self._access_token()}",
                     "Content-Type": "application/json",
                 },
             )
         except httpx.HTTPError as exc:
             raise FCMError(f"Falha de comunicacao com FCM: {exc}") from exc
         if response.status_code != 200:
-            raise FCMError(f"FCM retornou HTTP {response.status_code}")
+            raise FCMError(
+                f"FCM retornou HTTP {response.status_code}: "
+                f"{response.text[:200]}"
+            )
         return response.json()
 
 

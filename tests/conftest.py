@@ -14,7 +14,9 @@ from sqlalchemy.pool import StaticPool
 TEST_DB_URL = os.environ.get("TEST_DATABASE_URL", "sqlite://")
 os.environ["DATABASE_URL"] = TEST_DB_URL
 os.environ["SERPAPI_KEY"] = "test-serpapi-key"
-os.environ["FCM_KEY"] = "test-fcm-key"
+os.environ["FIREBASE_CREDENTIALS_JSON"] = (
+    '{"project_id": "test-project", "client_email": "test@example.com"}'
+)
 os.environ["SCHEDULER_ENABLED"] = "false"
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))

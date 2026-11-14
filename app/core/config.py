@@ -27,7 +27,6 @@ class Settings(BaseSettings):
 
     # Integracoes (preenchidas via .env ou painel - nunca no codigo)
     SERPAPI_KEY: str = ""
-    FCM_KEY: str = ""
 
     # SerpApi - Google Flights
     SERPAPI_BASE_URL: str = "https://serpapi.com/search.json"
@@ -43,8 +42,14 @@ class Settings(BaseSettings):
     SCHEDULER_MAX_INSTANCES: int = 1
     SCHEDULER_COALESCE: bool = True
 
-    # Firebase Cloud Messaging (legacy HTTP API — chave via .env)
-    FCM_ENDPOINT: str = "https://fcm.googleapis.com/fcm/send"
+    # Firebase Cloud Messaging — HTTP v1 com OAuth2 (conta de servico)
+    # Credenciais via JSON em variavel de ambiente OU arquivo local.
+    FIREBASE_CREDENTIALS_JSON: str = ""
+    FIREBASE_SERVICE_ACCOUNT_FILE: str = "firebase-service-account.json"
+    FIREBASE_PROJECT_ID: str = ""  # vazio = lido do JSON da conta de servico
+    FCM_V1_ENDPOINT_TEMPLATE: str = (
+        "https://fcm.googleapis.com/v1/projects/{project_id}/messages:send"
+    )
     FCM_TIMEOUT_SECONDS: float = 15.0
 
     # CORS — origens permitidas separadas por virgula ("*" libera tudo)
