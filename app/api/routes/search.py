@@ -6,6 +6,8 @@ from app.api.deps import DbSession, FlightService
 from app.core.config import settings
 from app.models.monitored_route import MonitoredRoute
 from app.schemas.flight_search import (
+    BookingOptionsRequest,
+    BookingOptionsResponse,
     FlightSearchResponse,
     SearchCriteria,
 )
@@ -26,6 +28,31 @@ def search_flights(criteria: SearchCriteria, service: FlightService):
     """Busca avulsa de passagens (nao persiste; usada pela tela de busca)."""
     try:
         return service.search(criteria)
+    except SerpApiError as exc:
+        raise HTTPException(
+            status_code=exc.status_code or 503, detail=str(exc)
+        ) from exc
+
+
+@router.post(
+    "/search/booking-options",
+    response_model=BookingOptionsResponse,
+    status_code=status.HTTP_200_OK,
+    tags=["search"],
+)
+def booking_options(req: BookingOptionsRequest, service: FlightService):
+    """Canais de venda (cia/agencia) de uma opcao ja exibida na busca.
+
+    Executa as chamadas extras do fluxo Google (departure_token ->
+    booking_token -> booking_options) somente quando o usuario clica.
+    """
+    try:
+        options = service.booking_options(
+            req.criteria,
+            departure_token=req.departure_token,
+            booking_token=req.booking_token,
+        )
+        return BookingOptionsResponse(options=options)
     except SerpApiError as exc:
         raise HTTPException(
             status_code=exc.status_code or 503, detail=str(exc)

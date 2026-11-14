@@ -160,6 +160,7 @@ class FlightSearchService:
             has_mixed_class=bool(mixed),
             mixed_class_details=mixed,
             booking_token=group.get("booking_token"),
+            departure_token=group.get("departure_token"),
         )
 
     def parse_response(
@@ -265,6 +266,52 @@ class FlightSearchService:
             option_count=len(options),
             search_url=search_url,
         )
+
+    def booking_options(
+        self,
+        criteria: SearchCriteria,
+        departure_token: str | None = None,
+        booking_token: str | None = None,
+    ) -> list:
+        """Resolve os vendedores (cia/agencia) de uma opcao ja exibida.
+
+        Ida e volta: 1a chamada com departure_token devolve as voltas
+        possiveis; a mais barata com booking_token segue para a 2a
+        chamada, que traz os canais de venda com link de compra.
+        """
+        params = self.build_params(criteria)
+        token = booking_token
+        if token is None and departure_token:
+            payload = self._client.search(
+                {**params, "departure_token": departure_token}
+            )
+            returns = (payload.get("best_flights") or []) + (
+                payload.get("other_flights") or []
+            )
+            with_token = [g for g in returns if g.get("booking_token")]
+            with_token.sort(key=lambda g: g.get("price") or float("inf"))
+            token = with_token[0]["booking_token"] if with_token else None
+        if token is None:
+            return []
+
+        payload = self._client.search({**params, "booking_token": token})
+        options = []
+        for entry in payload.get("booking_options") or []:
+            for kind, combined in (("together", True), ("separately", False)):
+                seller = entry.get(kind)
+                if not seller:
+                    continue
+                req = seller.get("booking_request") or {}
+                options.append(
+                    {
+                        "book_with": seller.get("book_with"),
+                        "price": seller.get("price"),
+                        "currency": criteria.currency,
+                        "url": req.get("url"),
+                        "together": combined,
+                    }
+                )
+        return options
 
     def search_route(
         self, db: Session, route: MonitoredRoute, triggered_by: str = "manual"

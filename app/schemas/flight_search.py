@@ -84,6 +84,7 @@ class FlightOption(BaseModel):
     has_mixed_class: bool = False
     mixed_class_details: list[MixedClassDetail] = []
     booking_token: str | None = None
+    departure_token: str | None = None
 
 
 class FlightSearchResponse(BaseModel):
@@ -92,6 +93,40 @@ class FlightSearchResponse(BaseModel):
     options: list[FlightOption]
     option_count: int
     search_url: str | None = None  # link do Google Flights p/ esta busca
+
+
+class BookingOptionsRequest(BaseModel):
+    """Pedido de vendedores de uma opcao exibida na busca.
+
+    O frontend reenvia os mesmos criterios da busca + o token da opcao.
+    Para ida e volta o token e o departure_token da opcao escolhida;
+    para so ida pode chegar direto o booking_token.
+    """
+
+    criteria: SearchCriteria
+    departure_token: str | None = None
+    booking_token: str | None = None
+
+    @model_validator(mode="after")
+    def validate_token(self) -> "BookingOptionsRequest":
+        if not self.departure_token and not self.booking_token:
+            raise ValueError("departure_token ou booking_token e obrigatorio")
+        return self
+
+
+class BookingOption(BaseModel):
+    """Um vendedor da oferta (cia aerea ou agencia) com link de compra."""
+
+    book_with: str | None = None
+    price: Decimal | None = None
+    currency: str = "BRL"
+    url: str | None = None
+    together: bool = True
+
+
+class BookingOptionsResponse(BaseModel):
+    options: list[BookingOption] = []
+    selected_price: Decimal | None = None
 
 
 class PersistedSearchResult(BaseModel):
