@@ -83,6 +83,9 @@ def test_build_params_round_trip():
     assert params["travel_class"] == 1
     assert params["adults"] == 2
     assert params["currency"] == "BRL"
+    assert params["deep_search"] == "true"
+    assert "sort_by" not in params
+    assert "show_hidden" not in params
     assert params["api_key"] == "test-serpapi-key"
 
 

@@ -65,6 +65,7 @@ class FlightSearchService:
             "currency": criteria.currency,
             "hl": settings.SERPAPI_HL,
             "gl": settings.SERPAPI_GL,
+            "deep_search": "true",
             "api_key": settings.SERPAPI_KEY,
         }
 

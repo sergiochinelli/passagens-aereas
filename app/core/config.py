@@ -30,7 +30,7 @@ class Settings(BaseSettings):
 
     # SerpApi - Google Flights
     SERPAPI_BASE_URL: str = "https://serpapi.com/search.json"
-    SERPAPI_TIMEOUT_SECONDS: float = 30.0
+    SERPAPI_TIMEOUT_SECONDS: float = 60.0
     SERPAPI_HL: str = "pt-br"
     SERPAPI_GL: str = "br"
     SERPAPI_MAX_OPTIONS: int = 500
