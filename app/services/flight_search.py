@@ -166,16 +166,84 @@ class FlightSearchService:
             self.parse_option(group, criteria.travel_class, criteria.currency)
             for group in groups
         ]
-        options.sort(key=lambda opt: opt.price if opt.price is not None else 0)
+        options.sort(
+            key=lambda opt: opt.price if opt.price is not None else float("inf")
+        )
         return options[: settings.SERPAPI_MAX_OPTIONS]
+
+    def _option_signature(self, opt: FlightOption) -> tuple:
+        return (
+            opt.price,
+            tuple(opt.airlines),
+            tuple(
+                (leg.origin, leg.destination, leg.departure_time, leg.arrival_time)
+                for leg in opt.legs
+            ),
+        )
+
+    def _collect_groups(self, payload: dict, seen: set) -> list:
+        """Extrai grupos de voo ineditos de uma pagina de resposta."""
+        groups = []
+        for group in (payload.get("best_flights") or []) + (
+            payload.get("other_flights") or []
+        ):
+            flights = group.get("flights") or []
+            sig = (
+                group.get("booking_token"),
+                group.get("price"),
+                tuple(
+                    (
+                        (f.get("departure_airport") or {}).get("id"),
+                        (f.get("arrival_airport") or {}).get("id"),
+                        (f.get("departure_airport") or {}).get("time"),
+                    )
+                    for f in flights
+                ),
+            )
+            if sig in seen:
+                continue
+            seen.add(sig)
+            groups.append(group)
+        return groups
+
+    def _fetch_all_groups(self, params: dict, max_pages: int) -> list:
+        """Busca avulsa: percorre as paginas da SerpApi ate esgotar o resultado.
+
+        Cada pagina consome 1 credito SerpApi — por isso so e usada na busca
+        avulsa; o monitoramento de rotas continua com uma unica pagina.
+        """
+        seen: set = set()
+        groups: list = []
+        page_params = dict(params)
+        for _ in range(max(1, max_pages)):
+            payload = self._client.search(page_params)
+            groups.extend(self._collect_groups(payload, seen))
+            pagination = payload.get("serpapi_pagination") or {}
+            token = pagination.get("next_page_token")
+            if not token:
+                break
+            page_params = {**params, "next_page_token": token}
+        return groups
 
     # --------------------------- buscas ---------------------------
 
+    def _options_from_groups(
+        self, groups: list, criteria: SearchCriteria
+    ) -> list[FlightOption]:
+        options = [
+            self.parse_option(group, criteria.travel_class, criteria.currency)
+            for group in groups
+        ]
+        options.sort(
+            key=lambda opt: opt.price if opt.price is not None else float("inf")
+        )
+        return options[: settings.SERPAPI_MAX_OPTIONS]
+
     def search(self, criteria: SearchCriteria) -> FlightSearchResponse:
-        """Busca avulsa: retorna as opcoes normalizadas sem persistir."""
+        """Busca avulsa: retorna TODAS as opcoes da fonte, sem persistir."""
         params = self.build_params(criteria)
-        payload = self._client.search(params)
-        options = self.parse_response(payload, criteria)
+        groups = self._fetch_all_groups(params, settings.SERPAPI_MAX_PAGES)
+        options = self._options_from_groups(groups, criteria)
         return FlightSearchResponse(
             searched_at=datetime.now(timezone.utc),
             criteria=criteria,

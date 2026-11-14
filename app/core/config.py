@@ -33,7 +33,8 @@ class Settings(BaseSettings):
     SERPAPI_TIMEOUT_SECONDS: float = 30.0
     SERPAPI_HL: str = "pt-br"
     SERPAPI_GL: str = "br"
-    SERPAPI_MAX_OPTIONS: int = 10
+    SERPAPI_MAX_OPTIONS: int = 500
+    SERPAPI_MAX_PAGES: int = 4
 
     # Agendador de monitoramento (APScheduler)
     SCHEDULER_ENABLED: bool = True
