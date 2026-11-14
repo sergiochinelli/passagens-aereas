@@ -31,10 +31,15 @@ _TRAVEL_CLASS_TO_SERPAPI = {
 
 
 def _normalize_class(value: str | None) -> str | None:
-    """Normaliza o texto de classe retornado pela SerpApi p/ o padrao interno."""
+    """Normaliza o texto de classe retornado pela SerpApi p/ o padrao interno.
+
+    A fonte escreve "Business Class"/"Economy"/"Premium Economy" — removemos
+    o sufixo " Class" para comparar com a classe solicitada (business etc.).
+    """
     if value is None:
         return None
-    return value.strip().lower().replace(" ", "_")
+    norm = value.strip().lower().replace(" ", "_")
+    return norm.removesuffix("_class")
 
 
 class FlightSearchService:
@@ -207,24 +212,30 @@ class FlightSearchService:
             groups.append(group)
         return groups
 
-    def _fetch_all_groups(self, params: dict, max_pages: int) -> list:
+    def _fetch_all_groups(self, params: dict, max_pages: int) -> tuple[list, str | None]:
         """Busca avulsa: percorre as paginas da SerpApi ate esgotar o resultado.
 
         Cada pagina consome 1 credito SerpApi — por isso so e usada na busca
         avulsa; o monitoramento de rotas continua com uma unica pagina.
+        Retorna (grupos, url do Google Flights da 1a pagina).
         """
         seen: set = set()
         groups: list = []
+        search_url: str | None = None
         page_params = dict(params)
         for _ in range(max(1, max_pages)):
             payload = self._client.search(page_params)
+            if search_url is None:
+                search_url = (payload.get("search_metadata") or {}).get(
+                    "google_flights_url"
+                )
             groups.extend(self._collect_groups(payload, seen))
             pagination = payload.get("serpapi_pagination") or {}
             token = pagination.get("next_page_token")
             if not token:
                 break
             page_params = {**params, "next_page_token": token}
-        return groups
+        return groups, search_url
 
     # --------------------------- buscas ---------------------------
 
@@ -243,13 +254,16 @@ class FlightSearchService:
     def search(self, criteria: SearchCriteria) -> FlightSearchResponse:
         """Busca avulsa: retorna TODAS as opcoes da fonte, sem persistir."""
         params = self.build_params(criteria)
-        groups = self._fetch_all_groups(params, settings.SERPAPI_MAX_PAGES)
+        groups, search_url = self._fetch_all_groups(
+            params, settings.SERPAPI_MAX_PAGES
+        )
         options = self._options_from_groups(groups, criteria)
         return FlightSearchResponse(
             searched_at=datetime.now(timezone.utc),
             criteria=criteria,
             options=options,
             option_count=len(options),
+            search_url=search_url,
         )
 
     def search_route(

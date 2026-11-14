@@ -91,6 +91,7 @@ class FlightSearchResponse(BaseModel):
     criteria: SearchCriteria
     options: list[FlightOption]
     option_count: int
+    search_url: str | None = None  # link do Google Flights p/ esta busca
 
 
 class PersistedSearchResult(BaseModel):
