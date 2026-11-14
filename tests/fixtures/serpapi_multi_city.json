@@ -1,0 +1,42 @@
+{
+  "search_metadata": {"id": "def456", "status": "Success"},
+  "best_flights": [
+    {
+      "flights": [
+        {
+          "departure_airport": {"name": "Sao Paulo/Guarulhos", "id": "GRU", "time": "2026-12-10 19:00"},
+          "arrival_airport": {"name": "Lisbon Humberto Delgado", "id": "LIS", "time": "2026-12-11 09:30"},
+          "duration": 570,
+          "airline": "TAP Portugal",
+          "travel_class": "Economy",
+          "flight_number": "TP088",
+          "extensions": []
+        },
+        {
+          "departure_airport": {"name": "Lisbon Humberto Delgado", "id": "LIS", "time": "2026-12-15 08:00"},
+          "arrival_airport": {"name": "Madrid Barajas", "id": "MAD", "time": "2026-12-15 10:20"},
+          "duration": 80,
+          "airline": "TAP Portugal",
+          "travel_class": "Economy",
+          "flight_number": "TP1024",
+          "extensions": []
+        },
+        {
+          "departure_airport": {"name": "Madrid Barajas", "id": "MAD", "time": "2026-12-22 14:00"},
+          "arrival_airport": {"name": "Sao Paulo/Guarulhos", "id": "GRU", "time": "2026-12-22 20:30"},
+          "duration": 630,
+          "airline": "Iberia",
+          "travel_class": "Economy",
+          "flight_number": "IB6831",
+          "extensions": []
+        }
+      ],
+      "layovers": [],
+      "total_duration": 1280,
+      "price": 5400,
+      "type": "Multi-city",
+      "booking_token": "token-multi-1"
+    }
+  ],
+  "other_flights": []
+}

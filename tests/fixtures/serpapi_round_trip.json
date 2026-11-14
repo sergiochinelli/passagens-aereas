@@ -1,0 +1,80 @@
+{
+  "search_metadata": {"id": "abc123", "status": "Success"},
+  "best_flights": [
+    {
+      "flights": [
+        {
+          "departure_airport": {"name": "Sao Paulo/Guarulhos", "id": "GRU", "time": "2026-12-10 21:35"},
+          "arrival_airport": {"name": "Miami International", "id": "MIA", "time": "2026-12-11 05:05"},
+          "duration": 450,
+          "airplane": "Boeing 777",
+          "airline": "LATAM",
+          "airline_logo": "https://example.com/la.png",
+          "travel_class": "Economy",
+          "flight_number": "LA8194",
+          "legroom": "31 in",
+          "extensions": []
+        }
+      ],
+      "layovers": [],
+      "total_duration": 450,
+      "carbon_emissions": {"this_flight": 580000},
+      "price": 3890,
+      "type": "Round trip",
+      "booking_token": "token-best-1"
+    },
+    {
+      "flights": [
+        {
+          "departure_airport": {"name": "Sao Paulo/Guarulhos", "id": "GRU", "time": "2026-12-10 10:15"},
+          "arrival_airport": {"name": "Tocumen International", "id": "PTY", "time": "2026-12-10 14:40"},
+          "duration": 445,
+          "airplane": "Boeing 737",
+          "airline": "Copa Airlines",
+          "travel_class": "Economy",
+          "flight_number": "CM700",
+          "extensions": []
+        },
+        {
+          "departure_airport": {"name": "Tocumen International", "id": "PTY", "time": "2026-12-10 16:20"},
+          "arrival_airport": {"name": "Miami International", "id": "MIA", "time": "2026-12-10 20:05"},
+          "duration": 225,
+          "airplane": "Boeing 737",
+          "airline": "Copa Airlines",
+          "travel_class": "Business",
+          "flight_number": "CM315",
+          "extensions": []
+        }
+      ],
+      "layovers": [
+        {"duration": 100, "name": "Tocumen International", "id": "PTY", "overnight": false}
+      ],
+      "total_duration": 770,
+      "price": 2950,
+      "type": "Round trip",
+      "booking_token": "token-best-2"
+    }
+  ],
+  "other_flights": [
+    {
+      "flights": [
+        {
+          "departure_airport": {"name": "Sao Paulo/Guarulhos", "id": "GRU", "time": "2026-12-10 08:00"},
+          "arrival_airport": {"name": "Miami International", "id": "MIA", "time": "2026-12-10 15:30"},
+          "duration": 450,
+          "airplane": "Airbus A330",
+          "airline": "American Airlines",
+          "travel_class": "Economy",
+          "flight_number": "AA930",
+          "extensions": []
+        }
+      ],
+      "layovers": [],
+      "total_duration": 450,
+      "price": 4100,
+      "type": "Round trip",
+      "booking_token": "token-other-1"
+    }
+  ],
+  "price_insights": {"lowest_price": 2950, "price_level": "low", "typical_price_range": [3000, 5200]}
+}
