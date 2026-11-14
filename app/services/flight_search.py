@@ -262,10 +262,15 @@ class FlightSearchService:
         options = self.parse_response(payload, criteria)
 
         best = options[0] if options else None
+        # SerpApi devolve o TOTAL da viagem; padrao interno e POR PESSOA
+        # (mesma unidade do max_price e da convencao dos sites de viagem)
+        lowest_per_person = (
+            round(best.price / (criteria.passengers or 1), 2) if best else None
+        )
         result = SearchResult(
             route_id=route.id,
             triggered_by=triggered_by,
-            lowest_price=best.price if best else None,
+            lowest_price=lowest_per_person,
             currency=criteria.currency,
             airline=", ".join(best.airlines) if best else None,
             total_duration_minutes=best.total_duration_minutes if best else None,

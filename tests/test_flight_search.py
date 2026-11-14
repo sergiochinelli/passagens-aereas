@@ -244,7 +244,9 @@ def test_route_manual_search_persists_result(client, family_account, mock_servic
 
     assert result["route_id"] == route_id
     assert result["triggered_by"] == "manual"
-    assert result["lowest_price"] == "2950.00"
+    # SerpApi devolve o total da viagem (2950 para 2 pax);
+    # o sistema grava por pessoa (1475)
+    assert result["lowest_price"] == "1475.00"
     assert result["has_mixed_class"] is True
     assert result["mixed_class_details"][0]["leg_index"] == 2
     assert result["layovers"][0]["airport_id"] == "PTY"

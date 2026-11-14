@@ -197,8 +197,8 @@ class NotificationService:
         if alert == "price_drop":
             title = f"Alerta de preco: {label}"
             body = (
-                f"Menor preco: {price} ({airline}), abaixo do teto de "
-                f"{format_brl(route.max_price)}."
+                f"Menor preco por pessoa: {price} ({airline}), abaixo do "
+                f"teto de {format_brl(route.max_price)}."
             )
         else:
             title = f"Classe mista detectada: {label}"
@@ -209,7 +209,7 @@ class NotificationService:
             detail = ", ".join(legs) if legs else "um ou mais trechos"
             body = (
                 f"Classe diferente da solicitada ({route.travel_class}): "
-                f"{detail}. Preco: {price} - {airline}."
+                f"{detail}. Preco por pessoa: {price} - {airline}."
             )
         return title, body
 
