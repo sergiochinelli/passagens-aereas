@@ -320,8 +320,13 @@ class FlightSearchService:
                         "url": req.get("url"),
                         "post_data": req.get("post_data"),
                         "together": combined,
+                        "airline": bool(seller.get("airline")),
+                        "marketed_as": seller.get("marketed_as") or [],
+                        "baggage_prices": seller.get("baggage_prices") or [],
                     }
                 )
+        # bilhetes unicos primeiro; separados por ultimo
+        options.sort(key=lambda o: (not o["together"], o["price"] or 0))
         return {"options": options, "return_option": return_option}
 
     def search_route(

@@ -128,6 +128,9 @@ class BookingOption(BaseModel):
     url: str | None = None
     post_data: str | None = None
     together: bool = True
+    airline: bool = False
+    marketed_as: list[str] = []
+    baggage_prices: list[str] = []
 
 
 class BookingOptionsResponse(BaseModel):
