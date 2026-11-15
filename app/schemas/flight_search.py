@@ -115,12 +115,18 @@ class BookingOptionsRequest(BaseModel):
 
 
 class BookingOption(BaseModel):
-    """Um vendedor da oferta (cia aerea ou agencia) com link de compra."""
+    """Um vendedor da oferta (cia aerea ou agencia) com link de compra.
+
+    O booking_request do Google nao e um GET comum: a url e o endpoint
+    generico travel/clk/f e os dados da oferta vao em post_data —
+    o frontend deve submeter um formulario POST, nao um link.
+    """
 
     book_with: str | None = None
     price: Decimal | None = None
     currency: str = "BRL"
     url: str | None = None
+    post_data: str | None = None
     together: bool = True
 
 

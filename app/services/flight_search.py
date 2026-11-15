@@ -311,6 +311,7 @@ class FlightSearchService:
                         "price": seller.get("price"),
                         "currency": criteria.currency,
                         "url": req.get("url"),
+                        "post_data": req.get("post_data"),
                         "together": combined,
                     }
                 )
