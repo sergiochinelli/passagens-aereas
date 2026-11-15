@@ -133,6 +133,7 @@ class BookingOption(BaseModel):
 class BookingOptionsResponse(BaseModel):
     options: list[BookingOption] = []
     selected_price: Decimal | None = None
+    return_option: FlightOption | None = None
 
 
 class PersistedSearchResult(BaseModel):

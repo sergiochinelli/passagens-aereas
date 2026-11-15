@@ -284,6 +284,7 @@ class FlightSearchService:
         # original; reenviar deep_search so adiciona latencia
         params.pop("deep_search", None)
         token = booking_token
+        return_option = None
         if token is None and departure_token:
             payload = self._client.search(
                 {**params, "departure_token": departure_token}
@@ -293,9 +294,15 @@ class FlightSearchService:
             )
             with_token = [g for g in returns if g.get("booking_token")]
             with_token.sort(key=lambda g: g.get("price") or float("inf"))
-            token = with_token[0]["booking_token"] if with_token else None
+            if with_token:
+                token = with_token[0]["booking_token"]
+                # a volta escolhida (mais barata) tambem vai na resposta —
+                # o Google so exibe a ida nos resultados de ida-e-volta
+                return_option = self.parse_option(
+                    with_token[0], criteria.travel_class, criteria.currency
+                )
         if token is None:
-            return []
+            return {"options": [], "return_option": None}
 
         payload = self._client.search({**params, "booking_token": token})
         options = []
@@ -315,7 +322,7 @@ class FlightSearchService:
                         "together": combined,
                     }
                 )
-        return options
+        return {"options": options, "return_option": return_option}
 
     def search_route(
         self, db: Session, route: MonitoredRoute, triggered_by: str = "manual"

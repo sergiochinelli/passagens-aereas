@@ -47,12 +47,15 @@ def booking_options(req: BookingOptionsRequest, service: FlightService):
     booking_token -> booking_options) somente quando o usuario clica.
     """
     try:
-        options = service.booking_options(
+        result = service.booking_options(
             req.criteria,
             departure_token=req.departure_token,
             booking_token=req.booking_token,
         )
-        return BookingOptionsResponse(options=options)
+        return BookingOptionsResponse(
+            options=result["options"],
+            return_option=result["return_option"],
+        )
     except SerpApiError as exc:
         raise HTTPException(
             status_code=exc.status_code or 503, detail=str(exc)
