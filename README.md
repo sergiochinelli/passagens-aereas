@@ -238,3 +238,36 @@ solicitada em codigo nem exposta â€” em testes usa-se chave ficticia.
   agendamento -> alerta. Etapas 5 e 6 sao apenas os clientes (React e
   React Native) consumindo `/api/v1`.
 - Migracao Supabase: basta trocar `DATABASE_URL` no `.env`.
+
+## Novidades da Etapa 5 — Autenticacao da API
+
+`
+app/models/auth_session.py      # AuthSession: token opaco, so o SHA-256 vai pro banco
+app/services/auth_service.py    # login contra auth_users, sessoes, seed, reset
+app/api/routes/auth.py          # /auth/login, /users, /me, /logout,
+                                #  /change-password, /reset, /seed
+app/api/deps.py                 # require_auth: guarda global (AUTH_REQUIRED)
+`
+
+### Como funciona
+
+- POST /api/v1/auth/login verifica a senha **no servidor** e devolve um
+  Bearer token (expira em AUTH_TOKEN_TTL_HOURS, padrao 30 dias).
+- equire_auth e dependencia de todos os routers quando
+  AUTH_REQUIRED=true. Rotas publicas minimas: /health, /auth/*,
+  GET/POST /family-accounts (selecao e criacao de conta, pre-login).
+- Senhas: o formato legado 1. (AES-GCM do frontend antigo) ainda e
+  aceito no login; toda gravacao nova usa PBKDF2 (nao reversivel).
+- POST /auth/reset implementa o aval familiar: outro usuario da mesma
+  conta confirma a propria senha e o sistema gera senha temporaria com
+  must_change=true.
+- POST /family-accounts semeia uth_users no servidor — o frontend
+  nao precisa mais escrever credenciais.
+- Logout e troca de senha revogam sessoes (token vira 401 na hora).
+
+### Rollout
+
+1. Backend sobe com AUTH_REQUIRED=false (default) — API segue aberta,
+   endpoints /auth/* ja funcionais.
+2. Frontend publicado passa a emitir token apos o login.
+3. AUTH_REQUIRED=true no ambiente tranca todas as rotas protegidas.
