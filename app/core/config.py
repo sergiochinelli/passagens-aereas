@@ -59,6 +59,21 @@ class Settings(BaseSettings):
     # Seguranca / hashing de senha
     PBKDF2_ITERATIONS: int = 260_000
 
+    # Autenticacao da API
+    # AUTH_REQUIRED=false mantem o comportamento atual (aberto) para o
+    # deploy escalonado; ligar no Render quando o frontend enviar o token.
+    AUTH_REQUIRED: bool = False
+    AUTH_TOKEN_TTL_HOURS: int = 720  # 30 dias
+    # Chave do formato legado v1 (AES-GCM). E a mesma ja publicada no bundle
+    # JS do frontend — publica por natureza; serve so para verificar senhas
+    # gravadas pelo app antigo. Rotacionavel via env em troca futura de app.
+    AUTH_MASTER_KEY: str = (
+        "18a51e94c3c25c9f68f5f3208a65c9f7a528c78239dfc6f1ceda89cadb3175e9"
+    )
+    AUTH_V1_SALT: str = "passagens-auth-v1"
+    AUTH_V1_ITERATIONS: int = 100_000
+    AUTH_USERS_SETTING_KEY: str = "auth_users"
+
     # Paginacao padrao das listagens
     DEFAULT_PAGE_SIZE: int = 50
     MAX_PAGE_SIZE: int = 200

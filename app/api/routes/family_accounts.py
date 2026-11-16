@@ -4,6 +4,7 @@ from sqlalchemy import select
 from app.api.deps import DbSession
 from app.core.config import settings
 from app.models.family_account import FamilyAccount
+from app.services.auth_service import seed_auth_users
 from app.schemas.family_account import (
     FamilyAccountCreate,
     FamilyAccountRead,
@@ -31,6 +32,7 @@ def create_family_account(payload: FamilyAccountCreate, db: DbSession):
     db.add(obj)
     db.commit()
     db.refresh(obj)
+    seed_auth_users(db, obj.id)
     return obj
 
 

@@ -7,6 +7,7 @@ pydantic-settings>=2.0
 httpx
 requests
 google-auth
+cryptography>=42
 pytest
 APScheduler>=3.10
 tzdata
