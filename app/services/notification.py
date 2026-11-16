@@ -129,6 +129,24 @@ class FCMClient:
                 "token": token,
                 "notification": {"title": title, "body": body},
                 "data": {k: str(v) for k, v in data.items() if v is not None},
+                # Sem prioridade alta o Android nao acorda o app fechado —
+                # a notificacao chega mas fica retida (era o bug de "nao veio nada").
+                "android": {
+                    "priority": "HIGH",
+                    "notification": {
+                        "channel_id": "avisos",
+                        "default_sound": True,
+                        "default_vibrate_timings": True,
+                    },
+                },
+                "webpush": {
+                    "notification": {
+                        "title": title,
+                        "body": body,
+                        "icon": "/favicon.svg",
+                    },
+                    "fcm_options": {"link": "/"},
+                },
             }
         }
         try:
